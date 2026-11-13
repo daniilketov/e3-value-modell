@@ -3,7 +3,7 @@
 button,input,select{font:inherit;color:inherit}button{cursor:pointer}button:disabled{opacity:.4;cursor:default}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #258865;outline-offset:2px}
 button{background:white;border:1px solid var(--line);border-radius:7px;padding:7px 10px;display:inline-flex;gap:7px;align-items:center;justify-content:center;font-weight:600}
 button:not(:disabled):hover{background:#eef3ed}button.primary{background:var(--green);color:white;border-color:var(--green)}button.primary:hover{background:#104735}.icon{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round;flex:none}
-.app{height:100dvh;min-height:570px;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto}
+.app{height:100dvh;min-height:570px;display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto}
 .top,.toolbar,.status{display:flex;align-items:center;gap:12px;padding:0 19px}.top{min-height:65px;justify-content:space-between;border-bottom:1px solid var(--line)}.toolbar{min-height:48px;border-bottom:1px solid var(--line);gap:6px;background:#fafbf9}.top-group{display:flex;align-items:center;gap:8px}.brand{display:flex;align-items:center;gap:11px;white-space:nowrap}.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:var(--green);color:white;font:bold 19px var(--sans)}.brand strong{font-size:17px;letter-spacing:-.045em}.divider{height:24px;width:1px;background:var(--line);margin:0 5px}.doc-title{border:1px solid transparent;background:transparent;border-radius:5px;padding:6px;width:clamp(115px,20vw,270px);font-weight:600}.doc-title:hover{border-color:var(--line)}
 .tool{height:34px;border-color:transparent;background:transparent}.tool[aria-pressed=true]{background:var(--pale);color:var(--green);border-color:#cbded2}.icon-only{width:34px;padding:0}.toolbar .spacer{flex:1}.zoom-label{font:12px var(--mono);min-width:50px;text-align:center}
 .work{display:grid;grid-template-columns:minmax(0,1fr) 190px;min-height:0}
@@ -15,7 +15,7 @@ button:not(:disabled):hover{background:#eef3ed}button.primary{background:var(--g
   justify-content: center;
   gap: 8px 18px;
   padding: 8px 12px;
-  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   background: var(--paper);
 }
 .palette .section {

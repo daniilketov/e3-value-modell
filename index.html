@@ -21,6 +21,7 @@
   <div class="divider"></div><button class="tool icon-only" id="undo" aria-label="Undo" title="Undo (Ctrl/⌘+Z)"></button><button class="tool icon-only" id="redo" aria-label="Redo" title="Redo (Ctrl/⌘+Shift+Z)"></button>
   <div class="spacer"></div><button class="tool icon-only" id="zoom-out" aria-label="Zoom out"></button><span id="zoom" class="zoom-label">100%</span><button class="tool icon-only" id="zoom-in" aria-label="Zoom in"></button><button class="tool" id="fit" aria-label="Fit model" title="Fit model"><span>Fit</span></button>
 </nav>
+<nav class="palette" id="palette" aria-label="Model elements"></nav>
 <main class="work">
   <section class="stage" id="stage" aria-label="Model canvas">
     <svg class="diagram" id="diagram" xmlns="http://www.w3.org/2000/svg" aria-label="Value model diagram" tabindex="0">
@@ -32,7 +33,6 @@
   </section>
   <aside class="inspector" aria-label="Properties"><h2 class="panel-title">Properties</h2><div id="properties"></div></aside>
 </main>
-<nav class="palette" id="palette" aria-label="Model elements"></nav>
 <footer class="status"><span id="message" role="status"></span><span id="storage">Changes saved in this browser</span></footer>
 </div>
 <script type="module" src="./js/app.js"></script>

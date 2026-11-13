@@ -2,6 +2,7 @@ import { names, model, isBox, isStimulus, sides, get, children, uid, allowedPare
 import { position, portLayout, interfaceHeight, stimulusRadius, symbolScale, horizontal, clamp } from './diagram.js';
 
 const snap = n => Math.round(n / 10) * 10;
+const placementTools = ['actor','market','composite','activity','interface','start','stop'];
 const instructions = {
   select:'Drag the middle to move or an edge to resize.',
   pan:'Drag the canvas to pan.',
@@ -10,8 +11,6 @@ const instructions = {
   composite:'Click the canvas or inside a Composite Actor.',
   activity:'Click inside the Actor, Market Segment, or Composite Actor that performs this activity.',
   interface:'Click near any side of a participant or Value Activity.',
-  offering:'Click a Value Interface to manage its ports.',
-  port:'Click a Value Interface to add or remove ports.',
   start:'Click inside the Value Activity where the scenario starts.',
   stop:'Click inside the Value Activity where the scenario ends.',
   exchange:'Click the outgoing Value Port.',
@@ -107,7 +106,7 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
       if (edges.y < 0) node.y = baseY+baseH-node.h;
     }
   }
-  function createAt(type,point,target) {
+  function createAt(type,point,target,repeat) {
     const node = {id:uid(),type,name:isStimulus({type}) ? '' : names[type],parent:null};
     const clickedBox = isBox(target) ? target : null;
     let parent;
@@ -145,8 +144,8 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     change(() => {
       model.nodes.push(node);
       view.selected = node.id;
-      view.mode = 'select';
-      notice(instructions.select);
+      if (!repeat) view.mode = 'select';
+      notice(repeat ? 'Click to place another '+names[type]+'. Hold Shift to keep placing, or press Esc to finish.' : instructions.select);
     });
   }
   function linkTo(target) {
@@ -198,17 +197,8 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
       select(id || null);
     } else if (view.mode === 'exchange' || view.mode === 'connect') {
       linkTo(target);
-    } else if (view.mode === 'offering' || view.mode === 'port') {
-      const iface = target?.type === 'offering' ? get(target.parent) : interfaceOf(target);
-      if (iface?.type !== 'interface') {
-        notice(instructions[view.mode],true);
-        return;
-      }
-      view.selected = iface.id;
-      notice('Use + or − in Properties to adjust ports.');
-      render();
-    } else if (view.mode !== 'pan' && view.mode !== 'port-exchange') {
-      createAt(view.mode,pointAt(event),target);
+    } else if (placementTools.includes(view.mode)) {
+      createAt(view.mode,pointAt(event),target,event.shiftKey);
     }
   });
   diagram.addEventListener('dblclick',event => {
@@ -327,4 +317,4 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
   return () => Boolean(drag);
 }
 
-export { bindInteractions, instructions };
+export { bindInteractions, instructions, placementTools };

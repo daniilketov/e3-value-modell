@@ -1,6 +1,6 @@
-import { names, model, isBox, isStimulus, sides, get, edgeById, children, uid, blank, validate, loadModel, setModel, storeModel } from './model.js';
+import { names, model, isBox, isStimulus, sides, get, edgeById, children, interfaceOf, uid, blank, validate, loadModel, setModel, storeModel } from './model.js';
 import { createDiagram } from './diagram.js';
-import { bindInteractions, instructions } from './interactions.js';
+import { bindInteractions, instructions, placementTools } from './interactions.js';
 
 const $ = id => document.getElementById(id);
 const diagram = $('diagram');
@@ -20,8 +20,6 @@ const icons = {
   composite:'<rect x="2" y="3" width="16" height="14" rx="1" stroke-dasharray="2 2"/><rect x="5" y="7" width="4" height="6"/><rect x="11" y="7" width="4" height="6"/>',
   activity:'<rect x="2" y="5" width="16" height="10" rx="4"/>',
   interface:'<rect x="5" y="2" width="10" height="16" rx="4"/><path d="m7 6 4 2-4 2zm6 5-4 2 4 2z"/>',
-  offering:'<path d="M6 3H3v14h3m2-12 5 2-5 2zm0 6 5 2-5 2z"/>',
-  port:'<path d="m6 4 10 6-10 6z"/>',
   exchange:'<path d="M2 10h16m-4-4 4 4-4 4"/>',
   start:'<circle cx="10" cy="10" r="4" fill="currentColor"/>',
   stop:'<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3" fill="currentColor"/>',
@@ -79,7 +77,7 @@ function setMode(next) {
   view.mode = next;
   diagram.style.cursor = '';
   view.source = null;
-  notice(instructions[view.mode]);
+  notice(instructions[view.mode]+(placementTools.includes(view.mode) ? ' Hold Shift to place multiple.' : ''));
   render();
 }
 
@@ -197,7 +195,7 @@ function renderProperties() {
     container.append(field('Name',node.name,value => setProperty(node,'name',value),{rename:true}));
   }
   if (node?.parent) {
-    const parent = get(node.parent);
+    const parent = node.type === 'port' ? interfaceOf(node) : get(node.parent);
     container.append(button('Select '+names[parent.type],() => select(parent.id),'full'));
   }
   if (isBox(node)) {
@@ -241,12 +239,6 @@ function renderProperties() {
     }
     container.append(list);
   }
-  if (node?.type === 'offering') {
-    container.append(hint(node.direction === 'in' ? 'Incoming' : 'Outgoing'));
-    container.append(button('Add Value Port',() => addPort(get(node.parent),node.direction),'full'));
-    const ports = children(node.id);
-    ports.forEach((port,i) => container.append(button('Value Port '+(i+1),() => select(port.id),'entry')));
-  }
   if (node?.type === 'port') {
     container.append(hint(get(node.parent).direction === 'in' ? 'Incoming port' : 'Outgoing port'));
     const exchanges = model.edges.filter(link => link.from === node.id || link.to === node.id);
@@ -273,7 +265,7 @@ function render({redraw = true} = {}) {
 }
 const sections = [
   ['Participants',['actor','market','composite','activity']],
-  ['Value exchange',['interface','offering','port','exchange']],
+  ['Value exchange',['interface','exchange']],
   ['Value scenario',['start','stop','connect']]
 ];
 for (const [label,tools] of sections) {

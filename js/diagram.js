@@ -81,17 +81,6 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
     g.append(S('line',{x1:-sign*12,y1:0,x2:dock,y2:0,stroke:'#57776a',class:'symbol'}),
       S('circle',{cx:dock,cy:0,r:7,fill:'transparent',class:'dock'}),
       S('circle',{cx:dock,cy:0,r:3,fill:'#315c4a',stroke:'#315c4a',class:'symbol dock'}));
-    for (const offer of children(node.id)) {
-      const entries = ports.filter(item => item.port.parent === offer.id);
-      if (entries.length < 2) continue;
-      const y1 = entries[0].y-7;
-      const y2 = entries.at(-1).y+7;
-      const bracket = group(offer,'pick');
-      const path = 'M '+(-sign*6)+' '+y1+' h '+(-sign*4)+' V '+y2+' h '+(sign*4);
-      bracket.append(S('path',{d:path,class:'hit',style:'stroke-width:5'}),S('path',{d:path,class:'edge symbol'}));
-      bracket.append(S('title',{},offer.direction === 'in' ? 'Incoming Value Offering' : 'Outgoing Value Offering'));
-      g.append(bracket);
-    }
     for (const {port,direction,y} of ports) {
       const portGroup = group(port,'pick');
       const facing = direction === 'out' ? sign : -sign;
