@@ -5,7 +5,7 @@ import { bindInteractions, instructions, placementTools } from './interactions.j
 const $ = id => document.getElementById(id);
 const diagram = $('diagram');
 const stage = $('stage');
-const view = { selected:null, mode:'select', source:null };
+const view = { selected:null, mode:'select', source:null, repeatPlacement:false };
 const canvas = createDiagram(diagram, view, $('counts'), $('empty'), $('grid'), $('zoom'));
 
 try {
@@ -73,10 +73,18 @@ function notice(text,error = false) {
 }
 function setMode(next) {
   view.mode = next;
+  view.repeatPlacement = false;
   diagram.style.cursor = '';
   view.source = null;
-  notice(instructions[view.mode]+(placementTools.includes(view.mode) ? ' Hold Shift to place multiple.' : ''));
+  notice(instructions[view.mode]+(placementTools.includes(view.mode) ? ' Press Shift to toggle repeat placement.' : ''));
   render();
+}
+
+function toggleRepeatPlacement() {
+  if (!placementTools.includes(view.mode)) return;
+  view.repeatPlacement = !view.repeatPlacement;
+  notice(instructions[view.mode]);
+  render({redraw:false});
 }
 
 function button(label,action,css = '') {
@@ -285,6 +293,7 @@ for (const [label,tools] of sections) {
 for (const [id,type] of [['undo','undo'],['redo','redo'],['zoom-out','minus'],['zoom-in','plus'],['fit','fit']]) {
   $(id).insertAdjacentHTML('afterbegin',icon(type));
 }
+$('repeat-placement').onclick = toggleRepeatPlacement;
 $('undo').onclick = () => restore(undoStack,redoStack);
 $('redo').onclick = () => restore(redoStack,undoStack);
 $('zoom-in').onclick = () => canvas.zoomBy(1.2);
@@ -337,6 +346,10 @@ document.addEventListener('keydown',event => {
     return;
   }
   if (event.target.closest('input, select, textarea') || isDragging()) return;
+  if (event.key === 'Shift' && !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    toggleRepeatPlacement();
+    return;
+  }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
     event.preventDefault();
     if (event.shiftKey) restore(redoStack,undoStack);

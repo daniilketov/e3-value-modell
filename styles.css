@@ -93,3 +93,22 @@ button:not(:disabled):hover{background:#eef3ed}button.primary{background:var(--g
 .zoom-controls .tool {
   height: 29px;
 }
+
+.repeat-placement {
+  position: absolute;
+  top: 13px;
+  left: 13px;
+  z-index: 1;
+  background: var(--paper);
+  border-color: var(--line);
+  font-size: 12px;
+}
+.repeat-placement[hidden] {
+  display: none;
+}
+.repeat-placement kbd {
+  font: 11px var(--mono);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 4px;
+}

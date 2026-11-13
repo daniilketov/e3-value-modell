@@ -105,7 +105,7 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
       if (edges.y < 0) node.y = baseY+baseH-node.h;
     }
   }
-  function createAt(type,point,target,repeat) {
+  function createAt(type,point,target) {
     const node = {id:uid(),type,parent:null};
     if (isBox(node)) node.name = names[type];
     const clickedBox = isBox(target) ? target : null;
@@ -148,8 +148,8 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
         addInterfacePort(model.nodes,node,'out');
       }
       view.selected = node.id;
-      if (!repeat) view.mode = 'select';
-      notice(repeat ? 'Click to place another '+names[type]+'. Hold Shift to keep placing, or press Esc to finish.' : instructions.select);
+      if (!view.repeatPlacement) view.mode = 'select';
+      notice(view.repeatPlacement ? 'Click to place another '+names[type]+'. Press Esc to exit.' : instructions.select);
     });
   }
   function linkTo(target) {
@@ -214,7 +214,7 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     } else if (view.mode === 'exchange' || view.mode === 'connect') {
       linkTo(target);
     } else if (placementTools.includes(view.mode)) {
-      createAt(view.mode,pointAt(event),target,event.shiftKey);
+      createAt(view.mode,pointAt(event),target);
     }
   });
   diagram.addEventListener('dblclick',event => {
