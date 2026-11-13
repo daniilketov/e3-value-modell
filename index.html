@@ -22,7 +22,6 @@
   <div class="spacer"></div><button class="tool icon-only" id="zoom-out" aria-label="Zoom out"></button><span id="zoom" class="zoom-label">100%</span><button class="tool icon-only" id="zoom-in" aria-label="Zoom in"></button><button class="tool" id="fit" aria-label="Fit model" title="Fit model"><span>Fit</span></button>
 </nav>
 <main class="work">
-  <aside class="palette" aria-label="Model elements"><h2 class="panel-title">Elements</h2><div id="palette"></div><p class="hint">Choose an element, then click the canvas. Press Esc to return to Select.</p></aside>
   <section class="stage" id="stage" aria-label="Model canvas">
     <svg class="diagram" id="diagram" xmlns="http://www.w3.org/2000/svg" aria-label="Value model diagram" tabindex="0">
       <defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#c9d3c8"/></pattern></defs>
@@ -33,6 +32,7 @@
   </section>
   <aside class="inspector" aria-label="Properties"><h2 class="panel-title">Properties</h2><div id="properties"></div></aside>
 </main>
+<nav class="palette" id="palette" aria-label="Model elements"></nav>
 <footer class="status"><span id="message" role="status"></span><span id="storage">Changes saved in this browser</span></footer>
 </div>
 <script type="module" src="./js/app.js"></script>

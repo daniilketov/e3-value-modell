@@ -279,6 +279,7 @@ const sections = [
 for (const [label,tools] of sections) {
   const section = document.createElement('div');
   section.className = 'section';
+  section.style.setProperty('--tool-count',tools.length);
   section.append(subtitle(label));
   for (const type of tools) {
     const entry = button(names[type],() => setMode(type));
