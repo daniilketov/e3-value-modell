@@ -76,14 +76,18 @@ function setMode(next) {
   view.repeatPlacement = false;
   diagram.style.cursor = '';
   view.source = null;
-  notice(instructions[view.mode]+(placementTools.includes(view.mode) ? ' Press Shift to toggle repeat placement.' : ''));
+  notice(instructions[view.mode]+(placementTools.includes(view.mode) ? ' Press Shift to repeat placement.' : ''));
   render();
 }
 
 function toggleRepeatPlacement() {
   if (!placementTools.includes(view.mode)) return;
-  view.repeatPlacement = !view.repeatPlacement;
-  notice(instructions[view.mode]);
+  if (view.repeatPlacement) {
+    select(null);
+    return;
+  }
+  view.repeatPlacement = true;
+  notice('Repeat placement is on. Press Shift again to exit.');
   render({redraw:false});
 }
 

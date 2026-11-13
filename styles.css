@@ -13,7 +13,7 @@ button:not(:disabled):hover{background:#eef3ed}button.primary{background:var(--g
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: center;
-  gap: 8px 18px;
+  gap: 8px 0;
   padding: 5px 12px;
   border-bottom: 1px solid var(--line);
   background: var(--paper);
@@ -22,6 +22,11 @@ button:not(:disabled):hover{background:#eef3ed}button.primary{background:var(--g
   display: grid;
   grid-template-columns: repeat(var(--tool-count), max-content);
   gap: 2px;
+}
+.palette .section + .section {
+  margin-inline-start: 9px;
+  padding-inline-start: 9px;
+  border-inline-start: 1px solid var(--line);
 }
 .palette h3 {
   grid-column: 1 / -1;

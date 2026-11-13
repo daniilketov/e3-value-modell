@@ -149,7 +149,7 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
       }
       view.selected = node.id;
       if (!view.repeatPlacement) view.mode = 'select';
-      notice(view.repeatPlacement ? 'Click to place another '+names[type]+'. Press Esc to exit.' : instructions.select);
+      notice(view.repeatPlacement ? 'Click to place another '+names[type]+'. Press Shift again or Esc to exit.' : instructions.select);
     });
   }
   function linkTo(target) {
