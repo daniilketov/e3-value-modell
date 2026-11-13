@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Draw eÂ³-value models with actors, value exchanges, and scenario paths.">
-<title>eÂ³-value Model Editor</title>
+<meta name="description" content="Draw e³-value models with actors, value exchanges, and scenario paths.">
+<title>e³-value Model Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -29,12 +29,12 @@ button:not(:disabled):hover{background:#eef3ed}button.primary{background:var(--g
 <body>
 <div class="app">
 <header class="top">
-  <div class="top-group"><div class="brand"><div class="brand-mark" aria-hidden="true">eÂ³</div><strong>Value Model Editor</strong></div><div class="divider"></div><input class="doc-title" id="model-title" aria-label="Model name" maxlength="100"></div>
+  <div class="top-group"><div class="brand"><div class="brand-mark" aria-hidden="true">e³</div><strong>Value Model Editor</strong></div><div class="divider"></div><input class="doc-title" id="model-title" aria-label="Model name" maxlength="100"></div>
   <div class="top-group"><button id="new-model">New</button><button id="open-model">Open</button><button id="save-model" class="primary">Save model</button><input type="file" id="file" accept=".json,application/json" hidden></div>
 </header>
 <nav class="toolbar" aria-label="Canvas controls">
   <button class="tool" id="select-tool" aria-pressed="true"><span>Select</span></button><button class="tool" id="pan-tool" aria-pressed="false"><span>Pan</span></button>
-  <div class="divider"></div><button class="tool icon-only" id="undo" aria-label="Undo" title="Undo (Ctrl/âŒ˜+Z)"></button><button class="tool icon-only" id="redo" aria-label="Redo" title="Redo (Ctrl/âŒ˜+Shift+Z)"></button>
+  <div class="divider"></div><button class="tool icon-only" id="undo" aria-label="Undo" title="Undo (Ctrl/⌘+Z)"></button><button class="tool icon-only" id="redo" aria-label="Redo" title="Redo (Ctrl/⌘+Shift+Z)"></button>
   <div class="spacer"></div><button class="tool icon-only" id="zoom-out" aria-label="Zoom out"></button><span id="zoom" class="zoom-label">100%</span><button class="tool icon-only" id="zoom-in" aria-label="Zoom in"></button><button class="tool" id="fit" aria-label="Fit model" title="Fit model"><span>Fit</span></button>
 </nav>
 <main class="work">
@@ -135,7 +135,7 @@ const redoStack = [];
 
 function validate(data) {
   if (data?.version !== 1 || typeof data.title !== 'string' || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
-    throw Error('Choose an eÂ³-value model JSON file.');
+    throw Error('Choose an e³-value model JSON file.');
   }
   const nodes = new Map();
   const ids = new Set();
@@ -295,7 +295,7 @@ function group(item,css) {
   return S('g',{'data-id':item.id,class:css+(selected === item.id?' active':'')+(source === item.id?' source':'')});
 }
 function shorten(text,max) {
-  return text.length <= max ? text : text.slice(0,Math.max(1,max-1))+'â€¦';
+  return text.length <= max ? text : text.slice(0,Math.max(1,max-1))+'…';
 }
 function drawBox(node) {
   const point = position(node);
@@ -401,7 +401,7 @@ function draw() {
   $('empty').hidden = model.nodes.length > 0 || mode !== 'select';
   const actors = model.nodes.filter(isActor).length;
   const exchanges = model.edges.filter(edge => edge.type === 'exchange').length;
-  $('counts').textContent = actors+' '+(actors === 1 ? 'actor' : 'actors')+' Â· '+exchanges+' '+(exchanges === 1 ? 'exchange' : 'exchanges');
+  $('counts').textContent = actors+' '+(actors === 1 ? 'actor' : 'actors')+' · '+exchanges+' '+(exchanges === 1 ? 'exchange' : 'exchanges');
 }
 function fit() {
   const points = model.nodes.filter(node => isBox(node) || isStimulus(node)).map(node => ({...position(node),w:node.w||10,h:node.h||25}));
