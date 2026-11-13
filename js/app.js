@@ -1,4 +1,4 @@
-import { names, model, isBox, isStimulus, sides, get, edgeById, children, interfaceOf, uid, blank, validate, loadModel, setModel, storeModel } from './model.js';
+import { names, model, isBox, sides, get, edgeById, children, interfaceOf, portsFor, addInterfacePort, blank, validate, loadModel, setModel, storeModel } from './model.js';
 import { createDiagram } from './diagram.js';
 import { bindInteractions, instructions, placementTools } from './interactions.js';
 
@@ -142,24 +142,23 @@ function rename(id) {
 function setProperty(item,key,value) {
   change(() => item[key] = value);
 }
-function offeringFor(iface,direction) {
-  return children(iface.id).find(node => node.direction === direction);
-}
 function addPort(iface,direction) {
   change(() => {
-    let offering = offeringFor(iface,direction);
-    if (!offering) {
-      offering = {id:uid(),type:'offering',parent:iface.id,direction};
-      model.nodes.push(offering);
-    }
-    model.nodes.push({id:uid(),type:'port',parent:offering.id});
+    addInterfacePort(model.nodes,iface,direction);
     view.selected = iface.id;
     view.mode = 'select';
     view.source = null;
     notice(instructions.select);
   });
 }
+function isRequiredPort(node) {
+  return node?.type === 'port' && children(node.parent).length <= 1;
+}
 function remove(id,selection = null) {
+  if (isRequiredPort(get(id))) {
+    notice('A Value Interface needs at least one incoming and one outgoing port.',true);
+    return;
+  }
   change(() => {
     const gone = new Set();
     function collect(nodeId) {
@@ -189,7 +188,7 @@ function renderProperties() {
     return;
   }
   container.append(subtitle(names[item.type]));
-  if (isBox(node) || isStimulus(node) || node?.type === 'interface') {
+  if (isBox(node)) {
     container.append(field('Name',node.name,value => setProperty(node,'name',value),{rename:true}));
   }
   if (node?.parent) {
@@ -221,15 +220,14 @@ function renderProperties() {
     list.className = 'subsection';
     list.append(subtitle('Value Ports'));
     for (const [direction,label] of [['out','Outgoing'],['in','Incoming']]) {
-      const offering = offeringFor(node,direction);
-      const ports = offering ? children(offering.id) : [];
+      const ports = portsFor(node,direction);
       const entry = document.createElement('div');
       entry.className = 'port-stepper';
       const count = document.createElement('span');
       count.textContent = label+' ('+ports.length+')';
       const minus = button('−',() => remove(ports.at(-1).id,node.id));
       const plus = button('+',() => addPort(node,direction));
-      minus.disabled = !ports.length;
+      minus.disabled = ports.length <= 1;
       minus.setAttribute('aria-label','Remove '+label.toLowerCase()+' port');
       plus.setAttribute('aria-label','Add '+label.toLowerCase()+' port');
       entry.append(count,minus,plus);
@@ -249,7 +247,12 @@ function renderProperties() {
     endpoints.append(button('Select source',() => select(edge.from)),button('Select target',() => select(edge.to)));
     container.append(endpoints);
   }
-  container.append(button('Delete element',() => remove(item.id),'remove full'));
+  const deleteButton = button('Delete element',() => remove(item.id),'remove full');
+  if (isRequiredPort(node)) {
+    deleteButton.disabled = true;
+    container.append(hint('Each interface needs one port in each direction.'));
+  }
+  container.append(deleteButton);
 }
 function render({redraw = true} = {}) {
   if (redraw) canvas.draw();

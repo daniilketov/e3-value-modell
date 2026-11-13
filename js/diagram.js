@@ -1,6 +1,7 @@
 import { names, model, isActor, isBox, isStimulus, get, children, interfaceOf } from './model.js';
 
-const dockOffset = 20;
+const interfaceHalfWidth = 12;
+const portSpacing = 30;
 const svgNS = 'http://www.w3.org/2000/svg';
 const sideAngles = {left:0,right:0,top:90,bottom:90};
 const normals = {left:{x:-1,y:0},right:{x:1,y:0},top:{x:0,y:-1},bottom:{x:0,y:1}};
@@ -29,11 +30,11 @@ function portLayout(iface) {
   const positive = iface.side === 'right' || iface.side === 'bottom';
   const groups = children(iface.id).sort((a,b) => positive ? b.direction.localeCompare(a.direction) : a.direction.localeCompare(b.direction));
   const ports = groups.flatMap(group => children(group.id).map(port => ({port,direction:group.direction})));
-  const gap = 20;
-  return ports.map((item,index) => ({...item,y:(index-(ports.length-1)/2)*gap}));
+
+  return ports.map((item,index) => ({...item,y:(index-(ports.length-1)/2)*portSpacing}));
 }
 function interfaceHeight(count) {
-  return Math.max(30,count*20+10);
+  return Math.max(30,(count-1)*portSpacing+30);
 }
 const stimulusRadius = node => node.type === 'stop' ? 10 : 7;
 
@@ -78,11 +79,10 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
     const height = interfaceHeight(ports.length);
     const g = group(node,'element');
     g.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+sideAngles[node.side]+') scale('+symbolScale(node)+')');
-    g.append(S('rect',{x:-12,y:-height/2,width:24,height,rx:11,fill:'#fff',stroke:'#57776a',class:'symbol'}),S('title',{},node.name || names.interface));
+    g.append(S('rect',{x:-interfaceHalfWidth,y:-height/2,width:2*interfaceHalfWidth,height,rx:11,fill:'#fff',stroke:'#57776a',class:'symbol'}),S('title',{},names.interface));
     const sign = node.side === 'right' || node.side === 'bottom' ? 1 : -1;
-    const dock = -sign*dockOffset;
-    g.append(S('line',{x1:-sign*12,y1:0,x2:dock,y2:0,stroke:'#57776a',class:'symbol'}),
-      S('circle',{cx:dock,cy:0,r:7,fill:'transparent',class:'dock'}),
+    const dock = -sign*interfaceHalfWidth;
+    g.append(S('circle',{cx:dock,cy:0,r:7,fill:'transparent',class:'dock'}),
       S('circle',{cx:dock,cy:0,r:3,fill:'#315c4a',stroke:'#315c4a',class:'symbol dock'}));
     for (const {port,direction,y} of ports) {
       const portGroup = group(port,'pick');
@@ -102,7 +102,6 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
     g.append(S('circle',{cx:p.x,cy:p.y,r:radius+4/camera.scale,fill:'transparent'}),
       S('circle',{cx:p.x,cy:p.y,r:radius,fill:node.type === 'stop' ? '#f7fbf8' : '#315c4a',stroke:'#315c4a',class:'symbol'}));
     if (node.type === 'stop') g.append(S('circle',{cx:p.x,cy:p.y,r:5*size,fill:'#315c4a','pointer-events':'none'}));
-    if (node.name) g.append(S('text',{x:p.x,y:p.y+radius+15,'text-anchor':'middle',class:'small'},node.name));
     g.append(S('title',{},names[node.type]));
     world.append(g);
   }
@@ -110,7 +109,7 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
     const point = position(node);
     if (node.type !== 'interface') return point;
     const normal = normals[node.side];
-    const distance = dockOffset*symbolScale(node);
+    const distance = interfaceHalfWidth*symbolScale(node);
     return {x:point.x-normal.x*distance,y:point.y-normal.y*distance};
   }
 

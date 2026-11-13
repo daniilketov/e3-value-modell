@@ -19,17 +19,17 @@ const sample = () => ({
     {id:'bakery',type:'actor',name:'Bakery',x:90,y:150,w:240,h:245,parent:null},
     {id:'customers',type:'market',name:'Customers',x:575,y:150,w:240,h:245,parent:null},
     {id:'bake',type:'activity',name:'Bake bread',x:32,y:69,w:135,h:145,parent:'bakery'},
-    {id:'seller',type:'interface',name:'Sell bread',parent:'bakery',side:'right',offset:.51},
-    {id:'buyer',type:'interface',name:'Buy bread',parent:'customers',side:'left',offset:.51},
+    {id:'seller',type:'interface',parent:'bakery',side:'right',offset:.51},
+    {id:'buyer',type:'interface',parent:'customers',side:'left',offset:.51},
     {id:'bo',type:'offering',parent:'seller',direction:'out'}, {id:'bi',type:'offering',parent:'seller',direction:'in'},
     {id:'ci',type:'offering',parent:'buyer',direction:'in'}, {id:'co',type:'offering',parent:'buyer',direction:'out'},
     {id:'bread-out',type:'port',parent:'bo'}, {id:'bread-in',type:'port',parent:'ci'},
     {id:'money-out',type:'port',parent:'co'}, {id:'money-in',type:'port',parent:'bi'},
     {id:'buy',type:'activity',name:'Buy bread',x:36,y:69,w:158,h:145,parent:'customers'},
-    {id:'buy-path',type:'interface',name:'Purchase activity',parent:'buy',side:'left',offset:.57},
-    {id:'bake-path',type:'interface',name:'Baking activity',parent:'bake',side:'right',offset:.43},
-    {id:'need',type:'start',name:'Need bread',x:88,y:56,parent:'buy'},
-    {id:'done',type:'stop',name:'Bread supplied',x:54,y:56,parent:'bake'}
+    {id:'buy-path',type:'interface',parent:'buy',side:'left',offset:.57},
+    {id:'bake-path',type:'interface',parent:'bake',side:'right',offset:.43},
+    {id:'need',type:'start',x:88,y:56,parent:'buy'},
+    {id:'done',type:'stop',x:54,y:56,parent:'bake'}
   ],
   edges:[
     {id:'bread',type:'exchange',from:'bread-out',to:'bread-in',name:'Bread'},
@@ -41,7 +41,7 @@ const sample = () => ({
   ]
 });
 
-let model = sample();
+let model = validate(sample());
 
 function loadModel() {
   const saved = localStorage.getItem(storageKey);
@@ -54,6 +54,20 @@ function setModel(next) {
 
 function storeModel() {
   localStorage.setItem(storageKey,JSON.stringify(model));
+}
+
+function portsFor(iface,direction) {
+  const offering = children(iface.id).find(node => node.type === 'offering' && node.direction === direction);
+  return offering ? children(offering.id) : [];
+}
+
+function addInterfacePort(nodes,iface,direction,nextId = uid) {
+  let offering = nodes.find(node => node.type === 'offering' && node.parent === iface.id && node.direction === direction);
+  if (!offering) {
+    offering = {id:nextId(),type:'offering',parent:iface.id,direction};
+    nodes.push(offering);
+  }
+  nodes.push({id:nextId(),type:'port',parent:offering.id});
 }
 
 function validate(data) {
@@ -104,6 +118,23 @@ function validate(data) {
         || !validLink(edge.type,from,to,lookup,{allowLegacyStimulusLinks:true})) throw Error('The model has an invalid connection.');
     links.add(endpoints);
   }
+  // Repair interfaces saved before the minimum port rule without changing their existing links.
+  const parentsWithPorts = new Set(data.nodes.filter(node => node.type === 'port').map(node => node.parent));
+  const populatedDirections = new Set(data.nodes.filter(node => node.type === 'offering' && parentsWithPorts.has(node.id))
+    .map(node => JSON.stringify([node.parent,node.direction])));
+  function nextId() {
+    let id;
+    do { id = uid(); } while (ids.has(id));
+    ids.add(id);
+    return id;
+  }
+  for (const node of nodes.values()) {
+    if (node.type === 'interface' || isStimulus(node)) delete node.name;
+    if (node.type !== 'interface') continue;
+    for (const direction of ['in','out']) {
+      if (!populatedDirections.has(JSON.stringify([node.id,direction]))) addInterfacePort(data.nodes,node,direction,nextId);
+    }
+  }
   return data;
 }
 
@@ -153,4 +184,4 @@ function validLink(type,from,to,lookup = get,{allowLegacyStimulusLinks = false} 
 }
 
 
-export { names, isActor, isBox, isStimulus, sides, model, get, edgeById, children, uid, blank, validate, allowedParent, activityHasStimulus, interfaceOf, isActivityActorPair, validLink, loadModel, setModel, storeModel };
+export { names, isActor, isBox, isStimulus, sides, model, get, edgeById, children, uid, blank, portsFor, addInterfacePort, validate, allowedParent, activityHasStimulus, interfaceOf, isActivityActorPair, validLink, loadModel, setModel, storeModel };

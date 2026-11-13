@@ -1,4 +1,4 @@
-import { names, model, isBox, isStimulus, sides, get, children, uid, allowedParent, activityHasStimulus, interfaceOf, isActivityActorPair, validLink } from './model.js';
+import { names, model, isBox, isStimulus, sides, get, children, uid, addInterfacePort, allowedParent, activityHasStimulus, interfaceOf, isActivityActorPair, validLink } from './model.js';
 import { position, portLayout, interfaceHeight, stimulusRadius, symbolScale, horizontal, clamp } from './diagram.js';
 
 const snap = n => Math.round(n / 10) * 10;
@@ -106,7 +106,8 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     }
   }
   function createAt(type,point,target,repeat) {
-    const node = {id:uid(),type,name:isStimulus({type}) ? '' : names[type],parent:null};
+    const node = {id:uid(),type,parent:null};
+    if (isBox(node)) node.name = names[type];
     const clickedBox = isBox(target) ? target : null;
     let parent;
     if (type === 'activity') parent = clickedBox?.type === 'activity' ? get(clickedBox.parent) : clickedBox;
@@ -142,6 +143,10 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     }
     change(() => {
       model.nodes.push(node);
+      if (type === 'interface') {
+        addInterfacePort(model.nodes,node,'in');
+        addInterfacePort(model.nodes,node,'out');
+      }
       view.selected = node.id;
       if (!repeat) view.mode = 'select';
       notice(repeat ? 'Click to place another '+names[type]+'. Hold Shift to keep placing, or press Esc to finish.' : instructions.select);
