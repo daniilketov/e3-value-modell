@@ -59,12 +59,15 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
     g.setAttribute('transform','translate('+point.x+' '+point.y+')');
     const colors = node.type === 'activity' ? ['#eaf3ed','#759487']
       : node.type === 'market' ? ['#f0f1e6','#7f8968']
-      : node.type === 'composite' ? ['#eef3f7','#6e8190'] : ['#fbfcf9','#75877d'];
+      : node.type === 'composite' ? ['none','#75877d'] : ['#fbfcf9','#75877d'];
     if (node.type === 'market') {
       for (const shift of [10,5]) g.append(S('rect',{x:shift,y:-shift,width:node.w,height:node.h,fill:colors[0],stroke:colors[1],class:'symbol'}));
     }
     const rect = S('rect',{width:node.w,height:node.h,rx:node.type === 'activity' ? 12 : 1,fill:colors[0],stroke:colors[1],class:'symbol'});
-    if (node.type === 'composite') rect.setAttribute('stroke-dasharray','5 4');
+    if (node.type === 'composite') {
+      rect.setAttribute('stroke-dasharray','5 4');
+      rect.setAttribute('pointer-events','all');
+    }
     g.append(rect,S('title',{},node.name || names[node.type]),
       S('text',{x:13,y:25,class:'title'},shorten(node.name || names[node.type],Math.max(names[node.type].length,Math.floor((node.w-24)/7)))));
     world.append(g);

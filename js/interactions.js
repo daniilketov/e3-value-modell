@@ -1,11 +1,10 @@
-import { names, model, isBox, isStimulus, sides, get, children, uid, allowedParent, activityHasStimulus, interfaceOf, validLink } from './model.js';
+import { names, model, isBox, isStimulus, sides, get, children, uid, allowedParent, activityHasStimulus, interfaceOf, isActivityActorPair, validLink } from './model.js';
 import { position, portLayout, interfaceHeight, stimulusRadius, symbolScale, horizontal, clamp } from './diagram.js';
 
 const snap = n => Math.round(n / 10) * 10;
 const placementTools = ['actor','market','composite','activity','interface','start','stop'];
 const instructions = {
   select:'Drag the middle to move or an edge to resize.',
-  pan:'Drag the canvas to pan.',
   actor:'Click the canvas or inside a Composite Actor.',
   market:'Click the canvas or inside a Composite Actor.',
   composite:'Click the canvas or inside a Composite Actor.',
@@ -13,7 +12,7 @@ const instructions = {
   interface:'Click near any side of a participant or Value Activity.',
   start:'Click inside the Value Activity where the scenario starts.',
   stop:'Click inside the Value Activity where the scenario ends.',
-  exchange:'Click the outgoing Value Port.',
+  exchange:'Click a Value Port.',
   connect:'Click a Stimulus or Value Interface.'
 };
 
@@ -151,29 +150,41 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
   function linkTo(target) {
     if (!view.source) {
       const acceptable = view.mode === 'exchange'
-        ? target?.type === 'port' && get(target.parent)?.direction === 'out'
+        ? target?.type === 'port'
         : target?.type === 'interface' || isStimulus(target);
       if (!acceptable) {
         notice(instructions[view.mode],true);
         return;
       }
       view.source = target.id;
-      notice(view.mode === 'exchange' ? 'Click the incoming Value Port.' : 'Click the other Stimulus or Value Interface.');
+      notice(view.mode === 'exchange' ? 'Click the second Value Port.' : 'Click the other Stimulus or Value Interface.');
       render();
       return;
     }
-    createLink(view.mode,get(view.source),target);
+    if (view.mode === 'exchange') linkPorts(get(view.source),target);
+    else createLink(view.mode,get(view.source),target);
+  }
+  function linkPorts(first,second) {
+    if (isActivityActorPair(first,second)) {
+      createLink('relay',first,second);
+      return;
+    }
+    const outgoingFirst = get(first.parent).direction === 'out';
+    createLink('exchange',outgoingFirst ? first : second,outgoingFirst ? second : first);
   }
   function createLink(type,from,target) {
     if (!validLink(type,from,target)) {
-      const message = type === 'exchange' ? 'Choose an opposite-direction port on a different Value Interface.'
-        : 'Connect two Value Interfaces, or connect a stimulus to a Value Interface on its own Value Activity.';
-      notice(message,true);
+      const messages = {
+        exchange:'Choose an opposite-direction port on a different Value Interface.',
+        relay:'Choose two incoming ports or two outgoing ports to connect the activity to its actor.',
+        connect:'Connect two Value Interfaces, or connect a stimulus to a Value Interface on its own Value Activity.'
+      };
+      notice(messages[type],true);
       return;
     }
     if (model.edges.some(edge => edge.type === type && (
       (edge.from === from.id && edge.to === target.id)
-      || (type === 'connect' && edge.to === from.id && edge.from === target.id)
+      || (type !== 'exchange' && edge.to === from.id && edge.from === target.id)
     ))) {
       notice('These elements are already connected.',true);
       return;
@@ -212,14 +223,12 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     if (view.mode === 'select') {
       view.mode = 'port-exchange';
       view.source = id;
-      notice('Double-click an opposite-direction Value Port on another Value Interface. Press Esc to cancel.');
+      notice('Double-click the second Value Port. Press Esc to cancel.');
       render({redraw:false});
       return;
     }
     if (view.source === id) return;
-    const first = get(view.source);
-    const outgoingFirst = get(first.parent).direction === 'out';
-    createLink('exchange',outgoingFirst ? first : port,outgoingFirst ? port : first);
+    linkPorts(get(view.source),port);
   });
   function draggableNode(event) {
     const node = get(targetId(event));
@@ -229,7 +238,8 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     ignoreClick = false;
     if (event.button !== 0 && event.button !== 1) return;
     const node = draggableNode(event);
-    const pan = view.mode === 'pan' || event.button === 1;
+    const onBackground = event.target === diagram || event.target.parentNode === diagram && event.target.localName === 'rect';
+    const pan = event.button === 1 || (view.mode === 'select' && onBackground);
     if (!pan && (view.mode !== 'select' || !node)) return;
     const point = pointAt(event);
     const action = pan ? {cursor:'grabbing'} : event.target.classList.contains('dock') ? {cursor:'move'} : dragAction(node,point);

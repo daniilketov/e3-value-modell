@@ -24,8 +24,6 @@ const icons = {
   start:'<circle cx="10" cy="10" r="4" fill="currentColor"/>',
   stop:'<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3" fill="currentColor"/>',
   connect:'<path d="M3 10h14" stroke-dasharray="1 3"/><circle cx="2" cy="10" r="1"/><circle cx="18" cy="10" r="1"/>',
-  select:'<path d="m4 2 12 9-6 1-2 6z"/>',
-  pan:'<path d="M6 10V5a1 1 0 0 1 2 0v4-6a1 1 0 0 1 2 0v6-5a1 1 0 0 1 2 0v5-3a1 1 0 0 1 2 0v7a4 4 0 0 1-4 4H9c-1.5 0-2.4-.7-3.1-1.7l-2.4-3.4a1.2 1.2 0 0 1 1.8-1.5L6 11"/>',
   undo:'<path d="M7 5 3 9l4 4M3 9h9a4 4 0 0 1 4 4v2"/>',
   redo:'<path d="m13 5 4 4-4 4m4-4H8a4 4 0 0 0-4 4v2"/>',
   minus:'<path d="M5 10h10"/>', plus:'<path d="M5 10h10m-5-5v10"/>',
@@ -241,8 +239,8 @@ function renderProperties() {
   }
   if (node?.type === 'port') {
     container.append(hint(get(node.parent).direction === 'in' ? 'Incoming port' : 'Outgoing port'));
-    const exchanges = model.edges.filter(link => link.from === node.id || link.to === node.id);
-    for (const exchange of exchanges) container.append(button(exchange.name || names.exchange,() => select(exchange.id),'entry'));
+    const links = model.edges.filter(link => link.from === node.id || link.to === node.id);
+    for (const link of links) container.append(button(link.name || names[link.type],() => select(link.id),'entry'));
   }
   if (edge?.type === 'exchange') container.append(field('Value Object',edge.name,value => setProperty(edge,'name',value),{rename:true}));
   if (edge) {
@@ -260,7 +258,7 @@ function render({redraw = true} = {}) {
   if (document.activeElement !== $('model-title')) $('model-title').value = model.title;
   $('undo').disabled = !undoStack.length;
   $('redo').disabled = !redoStack.length;
-  stage.dataset.mode = ['pan','select'].includes(view.mode) ? view.mode : 'draw';
+  stage.dataset.mode = view.mode === 'select' ? view.mode : 'draw';
   for (const tool of document.querySelectorAll('[data-tool]')) tool.setAttribute('aria-pressed',view.mode === tool.dataset.tool);
 }
 const sections = [
@@ -281,13 +279,8 @@ for (const [label,tools] of sections) {
   }
   $('palette').append(section);
 }
-for (const [id,type] of [['select-tool','select'],['pan-tool','pan'],['undo','undo'],['redo','redo'],['zoom-out','minus'],['zoom-in','plus'],['fit','fit']]) {
+for (const [id,type] of [['undo','undo'],['redo','redo'],['zoom-out','minus'],['zoom-in','plus'],['fit','fit']]) {
   $(id).insertAdjacentHTML('afterbegin',icon(type));
-}
-for (const type of ['select','pan']) {
-  $(type+'-tool').dataset.tool = type;
-  $(type+'-tool').setAttribute('aria-label',type === 'select' ? 'Select' : 'Pan');
-  $(type+'-tool').addEventListener('click',() => setMode(type));
 }
 $('undo').onclick = () => restore(undoStack,redoStack);
 $('redo').onclick = () => restore(redoStack,undoStack);

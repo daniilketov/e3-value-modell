@@ -1,7 +1,7 @@
 const storageKey = 'e3-value-model-v1';
 const names = {
   actor:'Actor', market:'Market Segment', composite:'Composite Actor', activity:'Value Activity',
-  interface:'Value Interface', offering:'Value Offering', port:'Value Port', exchange:'Value Exchange',
+  interface:'Value Interface', offering:'Value Offering', port:'Value Port', exchange:'Value Exchange', relay:'Port Connection',
   start:'Start Stimulus', stop:'Stop Stimulus', connect:'Connect Element'
 };
 const isActor = node => ['actor','market','composite'].includes(node?.type);
@@ -123,8 +123,20 @@ function activityHasStimulus(activity) {
 function interfaceOf(node, lookup = get) {
   return node?.type === 'port' ? lookup(lookup(node.parent)?.parent) : node;
 }
+function isActivityActorPair(first,second,lookup = get) {
+  if (first?.type !== 'port' || second?.type !== 'port') return false;
+  const fromOwner = lookup(interfaceOf(first,lookup)?.parent);
+  const toOwner = lookup(interfaceOf(second,lookup)?.parent);
+  return (fromOwner?.type === 'activity' && isActor(toOwner) && fromOwner.parent === toOwner.id)
+    || (toOwner?.type === 'activity' && isActor(fromOwner) && toOwner.parent === fromOwner.id);
+}
+
 function validLink(type,from,to,lookup = get,{allowLegacyStimulusLinks = false} = {}) {
   if (!from || !to || from.id === to.id) return false;
+  if (type === 'relay') {
+    return isActivityActorPair(from,to,lookup)
+      && lookup(from.parent)?.direction === lookup(to.parent)?.direction;
+  }
   if (type === 'exchange') {
     return from.type === 'port' && to.type === 'port'
       && lookup(from.parent)?.direction === 'out' && lookup(to.parent)?.direction === 'in'
@@ -141,4 +153,4 @@ function validLink(type,from,to,lookup = get,{allowLegacyStimulusLinks = false} 
 }
 
 
-export { names, isActor, isBox, isStimulus, sides, model, get, edgeById, children, uid, blank, validate, allowedParent, activityHasStimulus, interfaceOf, validLink, loadModel, setModel, storeModel };
+export { names, isActor, isBox, isStimulus, sides, model, get, edgeById, children, uid, blank, validate, allowedParent, activityHasStimulus, interfaceOf, isActivityActorPair, validLink, loadModel, setModel, storeModel };
