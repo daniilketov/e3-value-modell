@@ -1,5 +1,6 @@
 import { names, model, isActor, isBox, isStimulus, get, children, interfaceOf } from './model.js';
 
+const dockOffset = 20;
 const svgNS = 'http://www.w3.org/2000/svg';
 const sideAngles = {left:0,right:0,top:90,bottom:90};
 const normals = {left:{x:-1,y:0},right:{x:1,y:0},top:{x:0,y:-1},bottom:{x:0,y:1}};
@@ -76,6 +77,10 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
     g.setAttribute('transform','translate('+p.x+' '+p.y+') rotate('+sideAngles[node.side]+') scale('+symbolScale(node)+')');
     g.append(S('rect',{x:-12,y:-height/2,width:24,height,rx:11,fill:'#fff',stroke:'#57776a',class:'symbol'}),S('title',{},node.name || names.interface));
     const sign = node.side === 'right' || node.side === 'bottom' ? 1 : -1;
+    const dock = -sign*dockOffset;
+    g.append(S('line',{x1:-sign*12,y1:0,x2:dock,y2:0,stroke:'#57776a',class:'symbol'}),
+      S('circle',{cx:dock,cy:0,r:7,fill:'transparent',class:'dock'}),
+      S('circle',{cx:dock,cy:0,r:3,fill:'#315c4a',stroke:'#315c4a',class:'symbol dock'}));
     for (const offer of children(node.id)) {
       const entries = ports.filter(item => item.port.parent === offer.id);
       if (entries.length < 2) continue;
@@ -109,11 +114,20 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
     g.append(S('title',{},names[node.type]));
     world.append(g);
   }
+  function connectPosition(node) {
+    const point = position(node);
+    if (node.type !== 'interface') return point;
+    const normal = normals[node.side];
+    const distance = dockOffset*symbolScale(node);
+    return {x:point.x-normal.x*distance,y:point.y-normal.y*distance};
+  }
+
   function drawEdge(edge) {
     const from = get(edge.from);
     const to = get(edge.to);
-    const a = position(from);
-    const b = position(to);
+    const endpoint = edge.type === 'connect' ? connectPosition : position;
+    const a = endpoint(from);
+    const b = endpoint(to);
     const g = group(edge,'pick');
     let path = 'M '+a.x+' '+a.y+' L '+b.x+' '+b.y;
     let labelX = (a.x+b.x)/2;

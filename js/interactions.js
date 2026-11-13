@@ -10,8 +10,8 @@ const instructions = {
   composite:'Click the canvas or inside a Composite Actor.',
   activity:'Click inside the Actor, Market Segment, or Composite Actor that performs this activity.',
   interface:'Click near any side of a participant or Value Activity.',
-  offering:'Click a Value Interface, then choose the direction.',
-  port:'Click a Value Interface, then choose the offering direction.',
+  offering:'Click a Value Interface to manage its ports.',
+  port:'Click a Value Interface to add or remove ports.',
   start:'Click inside the Value Activity where the scenario starts.',
   stop:'Click inside the Value Activity where the scenario ends.',
   exchange:'Click the outgoing Value Port.',
@@ -163,23 +163,25 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
       render();
       return;
     }
-    const from = get(view.source);
-    if (!validLink(view.mode,from,target)) {
-      const message = view.mode === 'exchange' ? 'Choose an incoming port on a different Value Interface.'
+    createLink(view.mode,get(view.source),target);
+  }
+  function createLink(type,from,target) {
+    if (!validLink(type,from,target)) {
+      const message = type === 'exchange' ? 'Choose an opposite-direction port on a different Value Interface.'
         : 'Connect two Value Interfaces, or connect a stimulus to a Value Interface on its own Value Activity.';
       notice(message,true);
       return;
     }
-    if (model.edges.some(edge => edge.type === view.mode && (
-      (edge.from === view.source && edge.to === target.id)
-      || (view.mode === 'connect' && edge.to === view.source && edge.from === target.id)
+    if (model.edges.some(edge => edge.type === type && (
+      (edge.from === from.id && edge.to === target.id)
+      || (type === 'connect' && edge.to === from.id && edge.from === target.id)
     ))) {
       notice('These elements are already connected.',true);
       return;
     }
     change(() => {
-      const edge = {id:uid(),type:view.mode,from:view.source,to:target.id};
-      if (view.mode === 'exchange') edge.name = 'Value Object';
+      const edge = {id:uid(),type,from:from.id,to:target.id};
+      if (type === 'exchange') edge.name = 'Value Object';
       model.edges.push(edge);
       view.selected = edge.id;
       view.mode = 'select';
@@ -203,14 +205,31 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
         return;
       }
       view.selected = iface.id;
-      notice('Choose the direction in Properties.');
+      notice('Use + or − in Properties to adjust ports.');
       render();
-    } else if (view.mode !== 'pan') {
+    } else if (view.mode !== 'pan' && view.mode !== 'port-exchange') {
       createAt(view.mode,pointAt(event),target);
     }
   });
   diagram.addEventListener('dblclick',event => {
-    if (view.mode === 'select' && !ignoreClick) rename(targetId(event));
+    if (ignoreClick || !['select','port-exchange'].includes(view.mode)) return;
+    const id = targetId(event);
+    const port = get(id);
+    if (port?.type !== 'port') {
+      if (view.mode === 'select') rename(id);
+      return;
+    }
+    if (view.mode === 'select') {
+      view.mode = 'port-exchange';
+      view.source = id;
+      notice('Double-click an opposite-direction Value Port on another Value Interface. Press Esc to cancel.');
+      render({redraw:false});
+      return;
+    }
+    if (view.source === id) return;
+    const first = get(view.source);
+    const outgoingFirst = get(first.parent).direction === 'out';
+    createLink('exchange',outgoingFirst ? first : port,outgoingFirst ? port : first);
   });
   function draggableNode(event) {
     const node = get(targetId(event));
@@ -223,7 +242,7 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     const pan = view.mode === 'pan' || event.button === 1;
     if (!pan && (view.mode !== 'select' || !node)) return;
     const point = pointAt(event);
-    const action = pan ? {cursor:'grabbing'} : dragAction(node,point);
+    const action = pan ? {cursor:'grabbing'} : event.target.classList.contains('dock') ? {cursor:'move'} : dragAction(node,point);
     drag = {...action,node,pan,id:event.pointerId,x:event.clientX,y:event.clientY,point,started:false,
       baseX:pan ? canvas.camera.x : node.x,baseY:pan ? canvas.camera.y : node.y,
       baseW:node?.w,baseH:node?.h,baseSize:symbolScale(node || {}),

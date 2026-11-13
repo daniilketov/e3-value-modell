@@ -62,6 +62,10 @@ function restore(from,to) {
   if (!from.length) return;
   to.push(JSON.stringify(model));
   setModel(JSON.parse(from.pop()));
+  if (view.mode === 'port-exchange') {
+    view.mode = 'select';
+    notice(instructions.select);
+  }
   view.selected = null;
   view.source = null;
   saveLocal();
@@ -145,25 +149,21 @@ function setProperty(item,key,value) {
 function offeringFor(iface,direction) {
   return children(iface.id).find(node => node.direction === direction);
 }
-function addOffering(iface,direction,withPort) {
+function addPort(iface,direction) {
   change(() => {
     let offering = offeringFor(iface,direction);
     if (!offering) {
       offering = {id:uid(),type:'offering',parent:iface.id,direction};
       model.nodes.push(offering);
     }
-    view.selected = offering.id;
-    if (withPort) {
-      const port = {id:uid(),type:'port',parent:offering.id};
-      model.nodes.push(port);
-      view.selected = port.id;
-    }
+    model.nodes.push({id:uid(),type:'port',parent:offering.id});
+    view.selected = iface.id;
     view.mode = 'select';
     view.source = null;
     notice(instructions.select);
   });
 }
-function remove(id) {
+function remove(id,selection = null) {
   change(() => {
     const gone = new Set();
     function collect(nodeId) {
@@ -173,7 +173,8 @@ function remove(id) {
     collect(id);
     model.nodes = model.nodes.filter(node => !gone.has(node.id));
     model.edges = model.edges.filter(edge => ![edge.id,edge.from,edge.to].some(value => gone.has(value)));
-    view.selected = null;
+    view.selected = selection;
+    if (view.mode === 'port-exchange') view.mode = 'select';
     view.source = null;
     notice('Element deleted. Use Undo to restore it.');
   });
@@ -222,29 +223,27 @@ function renderProperties() {
     container.append(field('Side',node.side,value => setProperty(node,'side',value),{choices:sides.map(side => [side,side[0].toUpperCase()+side.slice(1)])}));
     const list = document.createElement('div');
     list.className = 'subsection';
-    list.append(subtitle('Value Offerings'));
-    if (view.mode === 'offering' || view.mode === 'port') {
-      list.append(hint(view.mode === 'offering' ? 'Choose the direction of the offering.' : 'Choose the direction of the port.'));
-    }
+    list.append(subtitle('Value Ports'));
     for (const [direction,label] of [['out','Outgoing'],['in','Incoming']]) {
       const offering = offeringFor(node,direction);
+      const ports = offering ? children(offering.id) : [];
       const entry = document.createElement('div');
-      entry.className = 'row';
-      const pick = button(offering ? label+' ('+children(offering.id).length+')' : 'Add '+label.toLowerCase(),() => {
-        if (view.mode === 'port') addOffering(node,direction,true);
-        else if (offering) select(offering.id);
-        else addOffering(node,direction,false);
-      });
-      entry.append(pick,button('+ Port',() => addOffering(node,direction,true)));
+      entry.className = 'port-stepper';
+      const count = document.createElement('span');
+      count.textContent = label+' ('+ports.length+')';
+      const minus = button('−',() => remove(ports.at(-1).id,node.id));
+      const plus = button('+',() => addPort(node,direction));
+      minus.disabled = !ports.length;
+      minus.setAttribute('aria-label','Remove '+label.toLowerCase()+' port');
+      plus.setAttribute('aria-label','Add '+label.toLowerCase()+' port');
+      entry.append(count,minus,plus);
       list.append(entry);
-      entry.style.marginBottom = '6px';
     }
-    list.append(hint('Ports in the same direction form one offering. Group them in this interface to model a bundle.'));
     container.append(list);
   }
   if (node?.type === 'offering') {
     container.append(hint(node.direction === 'in' ? 'Incoming' : 'Outgoing'));
-    container.append(button('Add Value Port',() => addOffering(get(node.parent),node.direction,true),'full'));
+    container.append(button('Add Value Port',() => addPort(get(node.parent),node.direction),'full'));
     const ports = children(node.id);
     ports.forEach((port,i) => container.append(button('Value Port '+(i+1),() => select(port.id),'entry')));
   }
