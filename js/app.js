@@ -270,6 +270,11 @@ function render({redraw = true} = {}) {
   $('undo').disabled = !undoStack.length;
   $('redo').disabled = !redoStack.length;
   stage.dataset.mode = view.mode === 'select' ? view.mode : 'draw';
+  const isPlacing = placementTools.includes(view.mode);
+  const repeatButton = $('repeat-placement');
+  repeatButton.hidden = !isPlacing;
+  if (!isPlacing) view.repeatPlacement = false;
+  repeatButton.setAttribute('aria-pressed',view.repeatPlacement);
   for (const tool of document.querySelectorAll('[data-tool]')) tool.setAttribute('aria-pressed',view.mode === tool.dataset.tool);
 }
 const sections = [
