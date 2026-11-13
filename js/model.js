@@ -101,7 +101,7 @@ function validate(data) {
     const to = lookup(edge.to);
     const endpoints = JSON.stringify([edge.type,...[edge.from,edge.to].sort()]);
     if (links.has(endpoints) || (edge.type === 'exchange' && typeof edge.name !== 'string')
-        || !validLink(edge.type,from,to,lookup)) throw Error('The model has an invalid connection.');
+        || !validLink(edge.type,from,to,lookup,{allowLegacyStimulusLinks:true})) throw Error('The model has an invalid connection.');
     links.add(endpoints);
   }
   return data;
@@ -116,10 +116,14 @@ function allowedParent(type,parent) {
   return isStimulus({type}) && parent?.type === 'activity';
 }
 
+function activityHasStimulus(activity) {
+  return children(activity.id).some(isStimulus);
+}
+
 function interfaceOf(node, lookup = get) {
   return node?.type === 'port' ? lookup(lookup(node.parent)?.parent) : node;
 }
-function validLink(type,from,to,lookup = get) {
+function validLink(type,from,to,lookup = get,{allowLegacyStimulusLinks = false} = {}) {
   if (!from || !to || from.id === to.id) return false;
   if (type === 'exchange') {
     return from.type === 'port' && to.type === 'port'
@@ -127,14 +131,14 @@ function validLink(type,from,to,lookup = get) {
       && interfaceOf(from,lookup)?.id !== interfaceOf(to,lookup)?.id;
   }
   if (type !== 'connect') return false;
-  if (from.type === 'interface' && to.type === 'interface') {
-    const firstOwner = lookup(from.parent);
-    const secondOwner = lookup(to.parent);
-    return firstOwner?.id === secondOwner?.id
-      || firstOwner?.parent === secondOwner?.id || secondOwner?.parent === firstOwner?.id;
-  }
-  return (isStimulus(from) && to.type === 'interface') || (from.type === 'interface' && isStimulus(to));
+  if (from.type === 'interface' && to.type === 'interface') return true;
+  const stimulus = isStimulus(from) ? from : to;
+  const iface = stimulus === from ? to : from;
+  if (!isStimulus(stimulus) || iface.type !== 'interface') return false;
+  // Existing files can contain links created before the same-activity rule.
+  return allowLegacyStimulusLinks
+    || (lookup(stimulus.parent)?.type === 'activity' && stimulus.parent === iface.parent);
 }
 
 
-export { names, isActor, isBox, isStimulus, sides, model, get, edgeById, children, uid, blank, validate, allowedParent, interfaceOf, validLink, loadModel, setModel, storeModel };
+export { names, isActor, isBox, isStimulus, sides, model, get, edgeById, children, uid, blank, validate, allowedParent, activityHasStimulus, interfaceOf, validLink, loadModel, setModel, storeModel };

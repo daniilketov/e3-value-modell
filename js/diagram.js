@@ -143,6 +143,13 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
     grid.setAttribute('patternTransform','translate('+camera.x+' '+camera.y+') scale('+camera.scale+')');
     zoom.textContent = Math.round(camera.scale*100)+'%';
   }
+  function updateSelection() {
+    for (const element of world.querySelectorAll('[data-id]')) {
+      element.classList.toggle('active',element.dataset.id === view.selected);
+      element.classList.toggle('source',element.dataset.id === view.source);
+    }
+  }
+
   function draw() {
     world.replaceChildren();
     const boxes = model.nodes.filter(isBox);
@@ -185,7 +192,7 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
   }
 
 
-  return { get camera() { return camera; }, cameraView, draw, fit, zoomBy };
+  return { get camera() { return camera; }, cameraView, draw, updateSelection, fit, zoomBy };
 }
 
 export { createDiagram, position, portLayout, interfaceHeight, stimulusRadius, symbolScale, horizontal, clamp };

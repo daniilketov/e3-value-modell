@@ -1,4 +1,4 @@
-import { names, model, isBox, isStimulus, sides, get, children, uid, allowedParent, interfaceOf, validLink } from './model.js';
+import { names, model, isBox, isStimulus, sides, get, children, uid, allowedParent, activityHasStimulus, interfaceOf, validLink } from './model.js';
 import { position, portLayout, interfaceHeight, stimulusRadius, symbolScale, horizontal, clamp } from './diagram.js';
 
 const snap = n => Math.round(n / 10) * 10;
@@ -18,7 +18,7 @@ const instructions = {
   connect:'Click a Stimulus or Value Interface.'
 };
 
-function bindInteractions(diagram, stage, canvas, view, { change, record, notice, render, select }) {
+function bindInteractions(diagram, stage, canvas, view, { change, record, notice, render, select, rename }) {
   let drag = null;
   let ignoreClick = false;
 
@@ -120,6 +120,10 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
       notice(instructions[type],true);
       return;
     }
+    if (isStimulus(node) && activityHasStimulus(parent)) {
+      notice('A Value Activity can contain one stimulus, either Start or Stop.',true);
+      return;
+    }
     node.parent = parent?.id || null;
     const origin = parent ? position(parent) : {x:0,y:0};
     const x = point.x-origin.x;
@@ -161,8 +165,9 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     }
     const from = get(view.source);
     if (!validLink(view.mode,from,target)) {
-      notice(view.mode === 'exchange' ? 'Choose an incoming port on a different Value Interface.'
-        : 'Link a Stimulus to an interface, or link two interfaces in the same activity or between an actor and its activity.',true);
+      const message = view.mode === 'exchange' ? 'Choose an incoming port on a different Value Interface.'
+        : 'Connect two Value Interfaces, or connect a stimulus to a Value Interface on its own Value Activity.';
+      notice(message,true);
       return;
     }
     if (model.edges.some(edge => edge.type === view.mode && (
@@ -185,7 +190,8 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
   diagram.addEventListener('click',event => {
     if (ignoreClick) return;
     const id = targetId(event);
-    const target = get(id);
+    const clicked = get(id);
+    const target = view.mode === 'connect' ? interfaceOf(clicked) : clicked;
     if (view.mode === 'select') {
       select(id || null);
     } else if (view.mode === 'exchange' || view.mode === 'connect') {
@@ -202,6 +208,9 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     } else if (view.mode !== 'pan') {
       createAt(view.mode,pointAt(event),target);
     }
+  });
+  diagram.addEventListener('dblclick',event => {
+    if (view.mode === 'select' && !ignoreClick) rename(targetId(event));
   });
   function draggableNode(event) {
     const node = get(targetId(event));

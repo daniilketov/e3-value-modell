@@ -99,6 +99,13 @@ function field(label,value,update,options = {}) {
     if (options.step) input.step = options.step;
   }
   input.value = value ?? '';
+  if (options.rename) {
+    input.dataset.rename = '';
+    input.addEventListener('keydown',event => {
+      if (event.key === 'Enter') input.blur();
+      if (event.key === 'Escape') input.value = value ?? '';
+    });
+  }
   input.addEventListener('change',() => {
     if (input.reportValidity()) update(options.type === 'number' ? input.valueAsNumber : input.value);
   });
@@ -121,7 +128,16 @@ function select(id) {
   view.source = null;
   view.selected = id;
   notice(instructions.select);
-  render();
+  render({redraw:false});
+}
+function rename(id) {
+  if (!id) return;
+  if (view.selected !== id) select(id);
+  const input = $('properties').querySelector('[data-rename]');
+  if (input) {
+    input.focus();
+    input.select();
+  }
 }
 function setProperty(item,key,value) {
   change(() => item[key] = value);
@@ -177,7 +193,7 @@ function renderProperties() {
   }
   container.append(subtitle(names[item.type]));
   if (isBox(node) || isStimulus(node) || node?.type === 'interface') {
-    container.append(field('Name',node.name,value => setProperty(node,'name',value)));
+    container.append(field('Name',node.name,value => setProperty(node,'name',value),{rename:true}));
   }
   if (node?.parent) {
     const parent = get(node.parent);
@@ -237,7 +253,7 @@ function renderProperties() {
     const exchanges = model.edges.filter(link => link.from === node.id || link.to === node.id);
     for (const exchange of exchanges) container.append(button(exchange.name || names.exchange,() => select(exchange.id),'entry'));
   }
-  if (edge?.type === 'exchange') container.append(field('Value Object',edge.name,value => setProperty(edge,'name',value)));
+  if (edge?.type === 'exchange') container.append(field('Value Object',edge.name,value => setProperty(edge,'name',value),{rename:true}));
   if (edge) {
     const endpoints = document.createElement('div');
     endpoints.className = 'row';
@@ -246,8 +262,9 @@ function renderProperties() {
   }
   container.append(button('Delete element',() => remove(item.id),'remove full'));
 }
-function render() {
-  canvas.draw();
+function render({redraw = true} = {}) {
+  if (redraw) canvas.draw();
+  else canvas.updateSelection();
   renderProperties();
   if (document.activeElement !== $('model-title')) $('model-title').value = model.title;
   $('undo').disabled = !undoStack.length;
@@ -324,7 +341,7 @@ $('save-model').onclick = () => {
   setTimeout(() => URL.revokeObjectURL(url),1000);
   notice('Model downloaded.');
 };
-const isDragging = bindInteractions(diagram, stage, canvas, view, { change, record, notice, render, select });
+const isDragging = bindInteractions(diagram, stage, canvas, view, { change, record, notice, render, select, rename });
 
 document.addEventListener('keydown',event => {
   if (event.key === 'Escape') {
