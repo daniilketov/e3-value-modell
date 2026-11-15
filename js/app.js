@@ -292,7 +292,10 @@ for (const [label,tools] of sections) {
   section.style.setProperty('--tool-count',tools.length);
   section.append(subtitle(label));
   for (const type of tools) {
-    const entry = button(names[type],() => setMode(type));
+    const entry = button(names[type],() => {
+      if (view.mode === type) select(null);
+      else setMode(type);
+    });
     entry.dataset.tool = type;
     entry.insertAdjacentHTML('afterbegin',icon(type));
     section.append(entry);

@@ -228,11 +228,14 @@ function bindInteractions(diagram, stage, canvas, view, { change, record, notice
     if (view.mode === 'select') {
       view.mode = 'port-exchange';
       view.source = id;
-      notice('Double-click the second Value Port. Press Esc to cancel.');
+      notice('Double-click another Value Port to connect, or the same port again to cancel.');
       render({redraw:false});
       return;
     }
-    if (view.source === id) return;
+    if (view.source === id) {
+      select(null);
+      return;
+    }
     linkPorts(get(view.source),port);
   });
   function draggableNode(event) {
