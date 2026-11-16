@@ -60,7 +60,7 @@ function createDiagram(diagram, view, counts, empty, grid, zoom) {
     g.setAttribute('transform','translate('+point.x+' '+point.y+')');
     const colors = node.type === 'activity' ? ['#eaf3ed','#759487']
       : node.type === 'market' ? ['#f0f1e6','#7f8968']
-      : node.type === 'composite' ? ['none','#75877d'] : ['#fbfcf9','#75877d'];
+      : node.type === 'composite' ? ['#dfe9df','#75877d'] : ['#fbfcf9','#75877d'];
     if (node.type === 'market') {
       for (const shift of [10,5]) g.append(S('rect',{x:shift,y:-shift,width:node.w,height:node.h,fill:colors[0],stroke:colors[1],class:'symbol'}));
     }
